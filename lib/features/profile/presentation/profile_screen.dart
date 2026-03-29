@@ -6,6 +6,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/widgets/widgets.dart';
 import '../../../core/providers/providers.dart';
+import '../../../core/models/models.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -13,7 +14,7 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final student = ref.watch(studentProvider);
-    final tokens = ref.watch(tokenBalancesProvider);
+    final tokensAsync = ref.watch(tokenBalancesProvider);
 
     return SafeArea(
       child: CustomScrollView(
@@ -154,9 +155,9 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(width: 10),
                   _StatCard(
                     label: 'Total Tokens',
-                    value: tokens
-                        .fold(0.0, (sum, t) => sum + t.balance)
-                        .toStringAsFixed(0),
+                    value: tokensAsync.valueOrNull != null
+                        ? tokensAsync.valueOrNull!.fold(0.0, (sum, t) => sum + t.balance).toStringAsFixed(0)
+                        : '...',
                     icon: Icons.token_rounded,
                     color: AppColors.accentPrimary,
                   ),

@@ -2,16 +2,44 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/models.dart';
 import '../data/mock_data.dart';
 
+import '../services/blockchain_service.dart';
+
 /// Student identity provider
 final studentProvider = Provider<StudentIdentity>((ref) => MockData.student);
 
-/// Token balances provider
-final tokenBalancesProvider = Provider<List<TokenBalance>>(
-  (ref) => MockData.tokenBalances,
-);
+/// Token balances provider (Async Blockchain Call)
+final tokenBalancesProvider = FutureProvider<List<TokenBalance>>((ref) async {
+  final academicBalance = await blockchainService.getTokenBalance(0);
+  final utilityBalance = await blockchainService.getTokenBalance(1);
+  final impactBalance = await blockchainService.getTokenBalance(2);
+
+  return [
+    TokenBalance(
+      type: TokenType.academic,
+      balance: academicBalance,
+      changePercent24h: 5.2,
+      multiplier: 1.3,
+    ),
+    TokenBalance(
+      type: TokenType.utility,
+      balance: utilityBalance,
+      changePercent24h: -2.1,
+      expiresAt: DateTime.now().add(const Duration(days: 30)),
+    ),
+    TokenBalance(
+      type: TokenType.impact,
+      balance: impactBalance,
+      changePercent24h: 12.8,
+      multiplier: 1.5,
+    ),
+  ];
+});
 
 /// Total balance provider
-final totalBalanceProvider = Provider<double>((ref) => MockData.totalBalance);
+final totalBalanceProvider = FutureProvider<double>((ref) async {
+  final tokens = await ref.watch(tokenBalancesProvider.future);
+  return tokens.fold<double>(0.0, (sum, t) => sum + t.balance);
+});
 
 /// Transactions provider
 final transactionsProvider = Provider<List<Transaction>>(

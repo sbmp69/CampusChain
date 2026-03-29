@@ -6,6 +6,7 @@ import '../../../app/theme/app_typography.dart';
 import '../../../core/widgets/widgets.dart';
 import '../../../core/providers/providers.dart';
 import '../../../core/models/models.dart';
+import '../../../core/services/blockchain_service.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -13,8 +14,8 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final student = ref.watch(studentProvider);
-    final tokens = ref.watch(tokenBalancesProvider);
-    final totalBalance = ref.watch(totalBalanceProvider);
+    final tokensAsync = ref.watch(tokenBalancesProvider);
+    final totalBalanceAsync = ref.watch(totalBalanceProvider);
     final activities = ref.watch(activityFeedProvider);
     final contracts = ref.watch(smartContractsProvider);
 
@@ -120,9 +121,23 @@ class DashboardScreen extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      '${totalBalance.toStringAsFixed(2)} CC',
-                      style: AppTypography.displayMedium,
+                    totalBalanceAsync.when(
+                      data: (balance) => Text(
+                        '${balance.toStringAsFixed(2)} CC',
+                        style: AppTypography.displayMedium,
+                      ),
+                      loading: () => const SizedBox(
+                        height: 40,
+                        width: 150,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: CircularProgressIndicator(),
+                        ),
+                      ),
+                      error: (err, stack) => Text(
+                        'Error loading',
+                        style: AppTypography.displayMedium.copyWith(color: Colors.red),
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -146,27 +161,41 @@ class DashboardScreen extends ConsumerWidget {
                     Row(
                       children: [
                         _QuickActionButton(
-                          icon: Icons.arrow_upward_rounded,
-                          label: 'Send',
+                          icon: Icons.auto_awesome_rounded,
+                          label: 'Earn (Test)',
                           color: AppColors.accentPrimary,
+                          onTap: () async {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Mining 50 Academic Tokens...'),
+                                backgroundColor: AppColors.success,
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                            await blockchainService.earnTokens(0, 50);
+                            ref.invalidate(tokenBalancesProvider);
+                          },
                         ),
                         const SizedBox(width: 12),
                         _QuickActionButton(
                           icon: Icons.arrow_downward_rounded,
                           label: 'Receive',
                           color: AppColors.accentSecondary,
+                          onTap: () {},
                         ),
                         const SizedBox(width: 12),
                         _QuickActionButton(
                           icon: Icons.qr_code_scanner_rounded,
                           label: 'Scan',
                           color: AppColors.accentGold,
+                          onTap: () {},
                         ),
                         const SizedBox(width: 12),
                         _QuickActionButton(
                           icon: Icons.swap_horiz_rounded,
                           label: 'Convert',
                           color: AppColors.tokenImpact,
+                          onTap: () {},
                         ),
                       ],
                     ),
@@ -187,17 +216,24 @@ class DashboardScreen extends ConsumerWidget {
                 children: [
                   Text('Your Tokens', style: AppTypography.headlineSmall),
                   const SizedBox(height: 12),
-                  Row(
-                    children: tokens.map((token) {
-                      return Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.only(
-                            right: token != tokens.last ? 10 : 0,
+                  tokensAsync.when(
+                    data: (tokens) => Row(
+                      children: tokens.map((token) {
+                        return Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              right: token != tokens.last ? 10 : 0,
+                            ),
+                            child: _TokenMiniCard(token: token),
                           ),
-                          child: _TokenMiniCard(token: token),
-                        ),
-                      );
-                    }).toList(),
+                        );
+                      }).toList(),
+                    ),
+                    loading: () => const SizedBox(
+                      height: 100,
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                    error: (err, stack) => const Text('Failed to load tokens'),
                   ),
                 ],
               ).animate().fadeIn(duration: 500.ms, delay: 200.ms).slideY(begin: 0.05),
@@ -294,38 +330,44 @@ class _QuickActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
+  final VoidCallback onTap;
 
   const _QuickActionButton({
     required this.icon,
     required this.label,
     required this.color,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Column(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: color.withValues(alpha: 0.2),
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: color.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: AppTypography.labelSmall.copyWith(
+                color: AppColors.textSecondary,
               ),
             ),
-            child: Icon(icon, color: color, size: 22),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: AppTypography.labelSmall.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

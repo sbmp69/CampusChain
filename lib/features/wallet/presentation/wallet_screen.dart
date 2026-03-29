@@ -22,14 +22,17 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
 
   @override
   Widget build(BuildContext context) {
-    final tokens = ref.watch(tokenBalancesProvider);
+    final tokensAsync = ref.watch(tokenBalancesProvider);
     final transactions = ref.watch(transactionsProvider);
     final chartData = ref.watch(chartDataProvider);
 
     return SafeArea(
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
+      child: tokensAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error loading wallet: $err')),
+        data: (tokens) => CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
           // ─── Header ───
           SliverToBoxAdapter(
             child: Padding(
@@ -288,6 +291,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
 
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
+      ),
       ),
     );
   }
