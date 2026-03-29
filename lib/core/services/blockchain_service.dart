@@ -21,9 +21,6 @@ class BlockchainService {
   DeployedContract? _campusDAO;
 
   // Expected default Hardhat deployment addresses
-  final String _identityAddr = '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0';
-  final String _tokenAddr = '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9';
-  final String _daoAddr = '0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9';
 
   bool _isInitialized = false;
 
@@ -41,6 +38,13 @@ class BlockchainService {
   }
 
   Future<void> _loadContracts() async {
+    // Dynamically load the deployed addresses
+    final addressesJsonStr = await rootBundle.loadString('assets/abis/addresses.json');
+    final addressesMap = jsonDecode(addressesJsonStr);
+    final _identityAddr = addressesMap['identity'];
+    final _tokenAddr = addressesMap['token'];
+    final _daoAddr = addressesMap['dao'];
+
     // 1. Identity
     final identityAbiJson = await rootBundle.loadString('assets/abis/CampusIdentity.json');
     final identityAbiArr = jsonDecode(identityAbiJson)['abi'];
@@ -109,7 +113,7 @@ class BlockchainService {
         function: func,
         parameters: [BigInt.from(proposalId), inFavor],
       ),
-      chainId: 1337, // Local hardhat chain
+      chainId: 31337, // Hardhat local chain ID
     );
   }
 
@@ -125,11 +129,11 @@ class BlockchainService {
           function: func,
           parameters: [_walletAddress, BigInt.from(tokenId), BigInt.from(amount)],
         ),
-        chainId: 1337,
+        chainId: 31337, // Hardhat local chain ID
       );
-      print("Minted Tokens! TX: \$txHash");
+      print("Minted Tokens! TX: $txHash");
     } catch (e) {
-      print("RPC Error (earnTokens): \$e");
+      print("RPC Error (earnTokens): $e");
     }
   }
 }

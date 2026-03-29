@@ -46,7 +46,15 @@ async function main() {
   await (await tokenContract.earnTokens(wallet.address, 1, 500, { nonce: currentNonce++ })).wait();
   await (await tokenContract.earnTokens(wallet.address, 2, 250, { nonce: currentNonce++ })).wait();
 
-  console.log("Done! You can now use these addresses in Flutter. (Assuming they match the BlockchainService addresses!)");
+  // Save the freshly deployed addresses to JSON so the Flutter App can automatically load them!
+  const addresses = {
+    identity: identityAddress,
+    token: tokenAddress,
+    dao: daoAddress
+  };
+  fs.writeFileSync('../assets/abis/addresses.json', JSON.stringify(addresses, null, 2));
+
+  console.log("Done! Network addresses saved to assets/abis/addresses.json for Flutter.");
 }
 
 main().catch((error) => {
