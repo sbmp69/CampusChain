@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:percent_indicator/percent_indicator.dart';
@@ -167,7 +168,7 @@ class _MissionsTab extends StatelessWidget {
   }
 }
 
-class _MissionCard extends StatelessWidget {
+class _MissionCard extends StatefulWidget {
   final Mission mission;
   final bool isClaimable;
 
@@ -176,24 +177,76 @@ class _MissionCard extends StatelessWidget {
     this.isClaimable = false,
   });
 
+  @override
+  State<_MissionCard> createState() => _MissionCardState();
+}
+
+class _MissionCardState extends State<_MissionCard> {
+  bool _isClaiming = false;
+  bool _claimed = false;
+
   Color get _tokenColor {
-    return switch (mission.rewardType) {
+    return switch (widget.mission.rewardType) {
       TokenType.academic => AppColors.tokenAcademic,
       TokenType.utility => AppColors.tokenUtility,
       TokenType.impact => AppColors.tokenImpact,
     };
   }
 
+  Future<void> _claimReward() async {
+    if (_isClaiming || _claimed) return;
+    HapticFeedback.mediumImpact();
+    setState(() => _isClaiming = true);
+
+    final overlayState = Overlay.of(context);
+    TxFeedback.showOnOverlay(
+      overlayState,
+      state: TxState.submitting,
+      title: 'Claiming Reward',
+      message: 'Requesting ${_tokenColor == AppColors.tokenAcademic ? "Academic" : _tokenColor == AppColors.tokenUtility ? "Utility" : "Impact"} Tokens...',
+    );
+
+    await Future.delayed(const Duration(milliseconds: 700));
+
+    if (!mounted) return;
+    TxFeedback.showOnOverlay(
+      overlayState,
+      state: TxState.confirming,
+      title: 'Verifying Mission',
+      message: 'Waiting for smart contract validation...',
+    );
+
+    await Future.delayed(const Duration(milliseconds: 1200));
+
+    if (!mounted) return;
+    setState(() {
+      _isClaiming = false;
+      _claimed = true;
+    });
+
+    TxFeedback.showOnOverlay(
+      overlayState,
+      state: TxState.confirmed,
+      title: 'Reward Claimed!',
+      message: 'You earned ${widget.mission.rewardTokens} Tokens for "${widget.mission.title}".',
+      txHash: '0x${DateTime.now().millisecondsSinceEpoch.toRadixString(16)}',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_claimed) {
+      return const SizedBox.shrink(); // Hide after claim logic
+    }
+
     return GlassCard(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       borderRadius: 16,
-      borderColor: isClaimable
+      borderColor: widget.isClaimable
           ? AppColors.accentGold.withValues(alpha: 0.3)
           : null,
-      gradient: isClaimable
+      gradient: widget.isClaimable
           ? LinearGradient(
               colors: [
                 AppColors.accentGold.withValues(alpha: 0.1),
@@ -214,10 +267,10 @@ class _MissionCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text(mission.title, style: AppTypography.headlineSmall),
+                        Text(widget.mission.title, style: AppTypography.headlineSmall),
                         const SizedBox(width: 8),
                         GlassChip(
-                          label: mission.category,
+                          label: widget.mission.category,
                           color: _tokenColor,
                           isSmall: true,
                         ),
@@ -225,7 +278,7 @@ class _MissionCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      mission.description,
+                      widget.mission.description,
                       style: AppTypography.bodySmall,
                     ),
                   ],
@@ -240,11 +293,11 @@ class _MissionCard extends StatelessWidget {
                 child: Column(
                   children: [
                     Text(
-                      '${mission.rewardTokens}',
+                      '${widget.mission.rewardTokens}',
                       style: AppTypography.statNumber.copyWith(color: _tokenColor),
                     ),
                     Text(
-                      mission.rewardType.emoji,
+                      widget.mission.rewardType.emoji,
                       style: const TextStyle(fontSize: 14),
                     ),
                   ],
@@ -260,10 +313,10 @@ class _MissionCard extends StatelessWidget {
                 child: LinearPercentIndicator(
                   padding: EdgeInsets.zero,
                   lineHeight: 8,
-                  percent: mission.progressPercent.clamp(0, 1),
+                  percent: widget.mission.progressPercent.clamp(0, 1),
                   backgroundColor: AppColors.glassFill,
                   linearGradient: LinearGradient(
-                    colors: isClaimable
+                    colors: widget.isClaimable
                         ? [AppColors.accentGold, AppColors.accentGoldEnd]
                         : [_tokenColor, _tokenColor.withValues(alpha: 0.6)],
                   ),
@@ -274,31 +327,31 @@ class _MissionCard extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Text(
-                '${mission.currentProgress}/${mission.targetProgress}',
+                '${widget.mission.currentProgress}/${widget.mission.targetProgress}',
                 style: AppTypography.labelMedium.copyWith(
                   color: _tokenColor,
                 ),
               ),
             ],
           ),
-          if (isClaimable) ...[
+          if (widget.isClaimable) ...[
             const SizedBox(height: 14),
             GlassButton(
-              label: 'Claim Reward',
-              icon: Icons.card_giftcard_rounded,
-              gradient: AppColors.gradientGold,
+              label: _isClaiming ? 'Claiming...' : 'Claim Reward',
+              icon: _isClaiming ? Icons.hourglass_top_rounded : Icons.card_giftcard_rounded,
+              gradient: _isClaiming ? AppColors.gradientPrimary : AppColors.gradientGold,
               isSmall: true,
-              onPressed: () {},
+              onPressed: _claimReward,
             ),
           ],
-          if (mission.deadline != null && !isClaimable) ...[
+          if (widget.mission.deadline != null && !widget.isClaimable) ...[
             const SizedBox(height: 10),
             Row(
               children: [
                 Icon(Icons.timer_outlined, size: 14, color: AppColors.textTertiary),
                 const SizedBox(width: 4),
                 Text(
-                  '${mission.deadline!.difference(DateTime.now()).inDays} days left',
+                  '${widget.mission.deadline!.difference(DateTime.now()).inDays} days left',
                   style: AppTypography.labelSmall,
                 ),
               ],

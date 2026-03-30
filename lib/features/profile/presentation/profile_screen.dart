@@ -6,7 +6,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/widgets/widgets.dart';
 import '../../../core/providers/providers.dart';
-import '../../../core/models/models.dart';
+
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});

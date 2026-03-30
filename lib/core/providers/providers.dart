@@ -81,14 +81,19 @@ final chartDataProvider = Provider<List<double>>(
   (ref) => MockData.chartData,
 );
 
+/// AI typing indicator provider
+final aiTypingProvider = StateProvider<bool>((ref) => false);
+
 /// AI chat messages provider
 final chatMessagesProvider =
     StateNotifierProvider<ChatMessagesNotifier, List<ChatMessage>>(
-  (ref) => ChatMessagesNotifier(),
+  (ref) => ChatMessagesNotifier(ref),
 );
 
 class ChatMessagesNotifier extends StateNotifier<List<ChatMessage>> {
-  ChatMessagesNotifier()
+  final Ref _ref;
+
+  ChatMessagesNotifier(this._ref)
       : super([
           ChatMessage(
             id: 'welcome',
@@ -111,8 +116,11 @@ class ChatMessagesNotifier extends StateNotifier<List<ChatMessage>> {
     ];
 
     if (isUser) {
-      // Simulate AI response
-      Future.delayed(const Duration(milliseconds: 1200), () {
+      // Show typing indicator immediately
+      _ref.read(aiTypingProvider.notifier).state = true;
+
+      Future.delayed(const Duration(milliseconds: 1400), () {
+        _ref.read(aiTypingProvider.notifier).state = false;
         state = [
           ...state,
           ChatMessage(
