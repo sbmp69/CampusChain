@@ -183,7 +183,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                         ),
                         const SizedBox(height: 8),
                         GlassNavBar(
-                          currentIndex: currentTab,
+                          currentIndex: (_showProfile || _showAiAssistant) ? -1 : currentTab,
                           onTap: (index) {
                             ref.read(currentTabProvider.notifier).state = index;
                             setState(() {

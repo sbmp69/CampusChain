@@ -156,7 +156,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
                           const SizedBox(width: 4),
                           StreamBuilder<int>(
                             stream: Stream.periodic(const Duration(seconds: 1), (i) => i),
-                            builder: (_, __) => Text(
+                            builder: (context, snapshot) => Text(
                               'Expires in ${tokens[_selectedTokenIndex].expiresAt!.difference(DateTime.now()).inDays}d ${tokens[_selectedTokenIndex].expiresAt!.difference(DateTime.now()).inHours.remainder(24)}h',
                               style: AppTypography.labelSmall.copyWith(
                                 color: AppColors.warning,
@@ -403,7 +403,7 @@ class _TransactionTile extends StatelessWidget {
               ),
               StreamBuilder<int>(
                 stream: Stream.periodic(const Duration(seconds: 30), (i) => i),
-                builder: (_, __) => Text(_timeAgo, style: AppTypography.labelSmall),
+                builder: (context, snapshot) => Text(_timeAgo, style: AppTypography.labelSmall),
               ),
             ],
           ),

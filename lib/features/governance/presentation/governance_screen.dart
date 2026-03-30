@@ -330,7 +330,7 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
               // Live countdown
               StreamBuilder<int>(
                 stream: Stream.periodic(const Duration(seconds: 1), (i) => i),
-                builder: (_, __) => AnimatedDefaultTextStyle(
+                builder: (context, snapshot) => AnimatedDefaultTextStyle(
                   duration: 300.ms,
                   style: AppTypography.labelSmall.copyWith(
                     color: _isUrgent ? AppColors.error : AppColors.warning,

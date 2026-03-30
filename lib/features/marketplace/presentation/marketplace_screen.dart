@@ -8,6 +8,8 @@ import '../../../core/widgets/widgets.dart';
 import '../../../core/providers/providers.dart';
 import '../../../core/models/models.dart';
 
+import '../../../core/services/blockchain_service.dart';
+
 enum _BuyState { idle, processing, success }
 
 class MarketplaceScreen extends ConsumerStatefulWidget {
@@ -129,7 +131,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
                         scrollDirection: Axis.horizontal,
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         itemCount: _categories.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        separatorBuilder: (context, index) => const SizedBox(width: 8),
                         itemBuilder: (context, index) {
                           final cat = _categories[index];
                           final isSelected = cat == _selectedCategory;
@@ -429,15 +431,15 @@ class _ListingCardState extends State<_ListingCard>
 }
 
 // ─── Purchase Sheet ───
-class _PurchaseSheet extends StatefulWidget {
+class _PurchaseSheet extends ConsumerStatefulWidget {
   final MarketListing listing;
   const _PurchaseSheet({required this.listing});
 
   @override
-  State<_PurchaseSheet> createState() => _PurchaseSheetState();
+  ConsumerState<_PurchaseSheet> createState() => _PurchaseSheetState();
 }
 
-class _PurchaseSheetState extends State<_PurchaseSheet> {
+class _PurchaseSheetState extends ConsumerState<_PurchaseSheet> {
   _BuyState _state = _BuyState.idle;
 
   Color get _tokenColor => switch (widget.listing.priceTokenType) {
@@ -471,6 +473,10 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
     await Future.delayed(const Duration(milliseconds: 1000));
 
     if (mounted) {
+      final tokenId = widget.listing.priceTokenType.index;
+      await blockchainService.spendTokens(tokenId, widget.listing.price);
+      ref.invalidate(tokenBalancesProvider);
+
       setState(() => _state = _BuyState.success);
       TxFeedback.showOnOverlay(
         overlayState,

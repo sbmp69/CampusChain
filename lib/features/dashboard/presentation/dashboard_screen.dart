@@ -8,6 +8,7 @@ import '../../../core/widgets/widgets.dart';
 import '../../../core/providers/providers.dart';
 import '../../../core/models/models.dart';
 import '../../../core/services/blockchain_service.dart';
+import 'action_sheets.dart';
 
 enum _EarnState { idle, loading, success }
 
@@ -134,7 +135,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             duration: const Duration(milliseconds: 900),
                             curve: Curves.easeInOut,
                             onEnd: () => setState(() {}),
-                            builder: (_, v, __) => Transform.scale(
+                            builder: (context, v, child) => Transform.scale(
                               scale: v,
                               child: Container(
                                 width: 8,
@@ -203,7 +204,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       ),
-                      error: (_, __) => Text(
+                      error: (error, stack) => Text(
                         'unavailable',
                         style: AppTypography.displayMedium.copyWith(color: AppColors.error),
                       ),
@@ -255,21 +256,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           icon: Icons.arrow_downward_rounded,
                           label: 'Receive',
                           color: AppColors.accentSecondary,
-                          onTap: () => _showComingSoon(context, 'Receive'),
+                          onTap: () => showReceiveSheet(context),
                         ),
                         const SizedBox(width: 12),
                         _QuickActionButton(
                           icon: Icons.qr_code_scanner_rounded,
                           label: 'Scan',
                           color: AppColors.accentGold,
-                          onTap: () => _showComingSoon(context, 'QR Scan'),
+                          onTap: () => showScanSheet(context),
                         ),
                         const SizedBox(width: 12),
                         _QuickActionButton(
                           icon: Icons.swap_horiz_rounded,
                           label: 'Convert',
                           color: AppColors.tokenImpact,
-                          onTap: () => _showComingSoon(context, 'Convert'),
+                          onTap: () => showConvertSheet(context),
                         ),
                       ],
                     ),
@@ -305,7 +306,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       height: 100,
                       child: Center(child: CircularProgressIndicator()),
                     ),
-                    error: (_, __) => const Text('Failed to load tokens'),
+                    error: (error, stack) => const Text('Failed to load tokens'),
                   ),
                 ],
               ).animate().fadeIn(duration: 500.ms, delay: 200.ms).slideY(begin: 0.05),
@@ -337,7 +338,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: contracts.where((c) => c.status != ContractStatus.completed).length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      separatorBuilder: (context, index) => const SizedBox(width: 12),
                       itemBuilder: (context, index) {
                         final active = contracts.where((c) => c.status != ContractStatus.completed).toList();
                         return _ContractCard(contract: active[index]);
@@ -398,28 +399,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
-      ),
-    );
-  }
-
-  void _showComingSoon(BuildContext context, String feature) {
-    HapticFeedback.selectionClick();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.construction_rounded, color: AppColors.accentGold, size: 18),
-            const SizedBox(width: 10),
-            Text('$feature — coming soon', style: AppTypography.labelMedium),
-          ],
-        ),
-        backgroundColor: AppColors.surfaceCard,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: AppColors.glassBorder),
-        ),
-        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -766,7 +745,7 @@ class _ActivityTile extends StatelessWidget {
               // Live time-ago updates every 30s
               StreamBuilder<int>(
                 stream: Stream.periodic(const Duration(seconds: 30), (i) => i),
-                builder: (_, __) => Text(_timeAgo(), style: AppTypography.labelSmall),
+                builder: (context, snapshot) => Text(_timeAgo(), style: AppTypography.labelSmall),
               ),
             ],
           ),

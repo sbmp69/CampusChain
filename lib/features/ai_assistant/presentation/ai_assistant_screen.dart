@@ -64,8 +64,8 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
     final isTyping = ref.watch(aiTypingProvider);
 
     // auto-scroll on new message
-    ref.listen(chatMessagesProvider, (_, __) => _scrollToBottom());
-    ref.listen(aiTypingProvider, (_, __) => _scrollToBottom());
+    ref.listen(chatMessagesProvider, (prev, next) => _scrollToBottom());
+    ref.listen(aiTypingProvider, (prev, next) => _scrollToBottom());
 
     return SafeArea(
       child: Column(

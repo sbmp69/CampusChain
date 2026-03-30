@@ -206,7 +206,7 @@ class _TxToastState extends State<_TxToast>
                           if (widget.txHash != null) ...[
                             const SizedBox(height: 4),
                             Text(
-                              'TX: ${widget.txHash!.substring(0, 18)}...',
+                              'TX: ${widget.txHash!.length > 18 ? '${widget.txHash!.substring(0, 18)}...' : widget.txHash!}',
                               style: AppTypography.labelSmall.copyWith(
                                 fontFamily: 'monospace',
                                 color: _stateColor,
@@ -281,7 +281,7 @@ class _TypingIndicatorState extends State<TypingIndicator>
           children: List.generate(3, (i) {
             return AnimatedBuilder(
               animation: _controller,
-              builder: (_, __) {
+              builder: (context, child) {
                 final phase = (_controller.value - i * 0.2).clamp(0.0, 1.0);
                 final scale = 1.0 + 0.5 * (1 - (2 * phase - 1).abs());
                 return Transform.scale(
@@ -326,7 +326,7 @@ class CountUpText extends StatelessWidget {
       tween: Tween(begin: 0, end: value),
       duration: duration,
       curve: Curves.easeOutExpo,
-      builder: (_, val, __) => Text(
+      builder: (context, val, child) => Text(
         '${val.toStringAsFixed(2)}$suffix',
         style: style,
       ),
@@ -396,7 +396,7 @@ class _BlockchainStatusBannerState extends State<BlockchainStatusBanner>
                 children: [
                   AnimatedBuilder(
                     animation: _pulseController,
-                    builder: (_, __) => Container(
+                    builder: (context, child) => Container(
                       width: 7,
                       height: 7,
                       decoration: BoxDecoration(
